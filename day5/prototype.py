@@ -3,8 +3,10 @@
 https://adventofcode.com/2023/day/5
 """
 
+from functools import partial
 from tqdm import tqdm
 from loguru import logger
+import numpy as np
 
 
 def map_lookup(
@@ -39,10 +41,10 @@ def map_lookup(
 
 
 def examine_seed(
-    seed_num: int,
     destinations: list[list[int]],
     sources: list[list[int]],
     ranges: list[list[int]],
+    seed_num: int,
 ) -> int:
     """Fully processes a single seed"""
     val = seed_num
@@ -80,3 +82,43 @@ test_ranges = [
     [1, 69],
     [37, 4],
 ]
+
+
+if __name__ == "__main__":
+    with open("input.txt") as in_f:
+        seeds = list(map(int, in_f.readline().strip().split(": ")[-1].split(" ")))
+        logger.debug(f"{seeds}")
+
+        in_dsts = []
+        in_srcs = []
+        in_rngs = []
+
+        tmp = in_f.readline()  # skip blank line and header
+        logger.debug(tmp)
+
+        map_idx = 0
+        reached_end = False
+        while not reached_end:
+            in_dsts.append([])
+            in_srcs.append([])
+            in_rngs.append([])
+
+            in_f.readline()  # skip header
+            while (n_line := in_f.readline()) != "\n":
+                if n_line == "":  # eof, quit
+                    reached_end = True
+                    break
+                _dst, _src, _rng = n_line.strip().split(" ")
+                logger.debug(f"Read {_dst}, {_src}, {_rng}")
+                in_dsts[map_idx].append(int(_dst))
+                in_srcs[map_idx].append(int(_src))
+                in_rngs[map_idx].append(int(_rng))
+
+            map_idx += 1
+
+            logger.debug(f"dsts {in_dsts}")
+            logger.debug(f"srcs {in_srcs}")
+            logger.debug(f"rngs {in_rngs}")
+
+    examine_f = partial(examine_seed, in_dsts, in_srcs, in_rngs)
+    locations = np.fromiter(map(examine_f, seeds), dtype=int)

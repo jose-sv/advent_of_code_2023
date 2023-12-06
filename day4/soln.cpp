@@ -4,14 +4,9 @@
 #include<stdint.h>
 #include<immintrin.h>
 
-#define MAX_VAL 999
-// since we have 8 values per byte, we only need 1/4 the mem
-#define MEM_SIZE 250
-
 int atoi(char* value) {
     int val = 0;
     int mult = 1;  // which digits place?
-    // the values are backwards!!
 
     for (char* c = value+2; c>=value; c--) {
         if (*c != '-') {
@@ -24,14 +19,6 @@ int atoi(char* value) {
     value[1] = '-';
     value[2] = '-';
 
-    // for (int v=0; v<3; v++) {
-    //     if (value[v] != '-') {  // unused, skip
-    //         val += (value[v] - '0') * mult;
-    //     }
-    //     mult *= 10;
-    // }
-
-    // std::cout << "atoi-->" << val << " ";
     return val;
 }
 
@@ -42,10 +29,8 @@ inline void init_values(uint32_t* winning, uint32_t* exist, int* card_id, char* 
     curr_val[1] = '-';
     curr_val[2] = '-';
 
-    int count = 0;
+    // TODO memset
     for (uint32_t* b=winning; b<winning+16; b+=8) {
-        count += 8;
-        // std::cout << (void*)b << " -- " << (void*)(b + 7) << '\n';
         b[0] &= 0x00000000;
         b[1] &= 0x00000000;
         b[2] &= 0x00000000;
@@ -55,11 +40,9 @@ inline void init_values(uint32_t* winning, uint32_t* exist, int* card_id, char* 
         b[6] &= 0x00000000;
         b[7] &= 0x00000000;
     }
-    // std::cout << count << '\n';
-    count = 0;
+
+    // TODO memset
     for (uint32_t* b=exist; b<exist+16; b+=8) {
-        count += 8;
-        // std::cout << (void*)b << " -- " << (void*)(b + 7) << '\n';
         b[0] &= 0x00000000;
         b[1] &= 0x00000000;
         b[2] &= 0x00000000;
@@ -69,7 +52,6 @@ inline void init_values(uint32_t* winning, uint32_t* exist, int* card_id, char* 
         b[6] &= 0x00000000;
         b[7] &= 0x00000000;
     }
-    // std::cout << count << '\n';
 }
 
 inline int get_addr_by_idx(int idx) {
@@ -111,13 +93,8 @@ void parse_file() {
     int card_id;
 
     int bit_to_set;
-    alignas(64) uint32_t winning[16];  // TODO size appropriately
-    alignas(64) uint32_t exist[16];    // TODO size appropriately
-    // uint8_t* winning = (uint8_t*)malloc(MEM_SIZE*2 + 10);  // avoid overflows
-    // uint8_t* exist = winning + MEM_SIZE + 1;
-
-    // std::cout << "(" << (void*)winning << " -- " << (void*)(winning + MEM_SIZE) << ") & ("
-    //     << (void*)exist << " -- " << (void*)(exist + MEM_SIZE) << ")" << '\n';
+    alignas(64) uint32_t winning[16];  // TODO leverage extra space
+    alignas(64) uint32_t exist[16];    // TODO leverage extra space
 
     uint32_t* lists[2];
     lists[0] = winning;
@@ -131,9 +108,7 @@ void parse_file() {
 
     init_values(winning, exist, &card_id, curr_val, &curr_val_idx, &processing);
     while(in_f) {
-        // std::cout << count++;
         n_char = in_f.get();
-        // std::cout << " (" << n_char << "): ";
 
         switch(n_char) {
             case '\n':
@@ -143,48 +118,36 @@ void parse_file() {
                     lists[processing][get_addr_by_idx(bit_to_set)] |= get_bitmask_by_idx(bit_to_set);
                 }
 
-                // std::cout << "Counting wins\n";
+                // TODO compute SCORES using count
                 std::cout << "Card " << card_id << " has " << count_wins(winning, exist) << " wins!\n";
-
-                // std::cout << "End of card\n";
 
                 init_values(winning, exist, &card_id, curr_val, &curr_val_idx, &processing);
                 break;
 
             case ':':  // end of name
-                // std::cout << "Name-->";
                 card_id = atoi(curr_val);
                 break;
 
             case ' ':  // terminate and skip
                 curr_val_idx = 0;
                 if (curr_val[0] != '-') {
+                    // convert from "index" (loaded value) to bit number
                     bit_to_set = atoi(curr_val);
-                    // std::cout << bit_to_set << "-->" << get_addr_by_idx(bit_to_set) << ".";
-                    // std::cout << std::hex << (unsigned int)masks[4] << std::dec << ".";
-                    // std::cout << std::hex << (unsigned int)get_bitmask_by_idx(bit_to_set) << std::dec << "[";
-                    // std::cout << std::hex << (unsigned int)lists[processing][get_addr_by_idx(bit_to_set)] << std::dec << "-->";
-
-                    // convert from "index" to bit number
                     lists[processing][get_addr_by_idx(bit_to_set)] |= get_bitmask_by_idx(bit_to_set);
-
-                    // std::cout << std::hex << (unsigned int)lists[processing][get_addr_by_idx(bit_to_set)] << std::dec << "] ";
                 }
                 break;
 
             case '|':  // switch to existing
-                // std::cout << "proc=" << processing << "-->";
                 processing = processing ^ 0x1;
-                // std::cout << processing << " ";
                 break;
 
             default:
+                // being lazy and processing later
+                // TODO compute and scale directly
+                // int:curr_val = int:curr_val * 10 + atoi(n_char)
                 curr_val[curr_val_idx++] = n_char;
                 break;
         }
-        // std::cout << curr_val[0] << curr_val[1] << curr_val[2];
-
-        // std::cout << '\n';
     }
 }
 

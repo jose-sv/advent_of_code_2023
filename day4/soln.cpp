@@ -1,3 +1,7 @@
+/*
+ * This was a fun chance to learn a bit about, and play around with, AVX512!
+ */
+
 #include<iostream>
 #include<fstream>
 #include<string>
